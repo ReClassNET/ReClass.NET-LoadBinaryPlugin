@@ -34,6 +34,8 @@ namespace LoadBinaryPlugin
 				throw new ArgumentNullException(nameof(host));
 			}
 
+			LoadBinaryPluginExt.host = host;
+
 			openFiles = new Dictionary<IntPtr, MemoryMappedFile>();
 
 			return true;
