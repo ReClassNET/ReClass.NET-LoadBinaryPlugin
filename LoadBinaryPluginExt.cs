@@ -27,7 +27,7 @@ namespace LoadBinaryPlugin
 		{
 			Contract.Requires(host != null);
 
-			System.Diagnostics.Debugger.Launch();
+			//System.Diagnostics.Debugger.Launch();
 
 			if (host == null)
 			{
