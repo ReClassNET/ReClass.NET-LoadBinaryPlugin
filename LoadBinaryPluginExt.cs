@@ -5,6 +5,7 @@ using System.Drawing;
 using System.IO.MemoryMappedFiles;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using ReClassNET.Memory;
 using ReClassNET.Plugins;
 using RGiesecke.DllExport;
 using static ReClassNET.Memory.NativeHelper;
@@ -97,23 +98,26 @@ namespace LoadBinaryPlugin
 		/// <param name="desiredAccess">The desired access. (ignored)</param>
 		/// <returns>A plugin internal handle to the file.</returns>
 		[DllExport(CallingConvention = CallingConvention.StdCall)]
-		private static IntPtr OpenRemoteProcess(int pid, int desiredAccess)
+		private static IntPtr OpenRemoteProcess(IntPtr id, ProcessAccess desiredAccess)
 		{
 			lock (sync)
 			{
-				try
+				if (currentFile.GetHashCode() == id.ToInt32())
 				{
-					var file = MemoryMappedFile.CreateFromFile(currentFile);
+					try
+					{
+						var file = MemoryMappedFile.CreateFromFile(currentFile);
 
-					var handle = file.SafeMemoryMappedFileHandle.DangerousGetHandle();
+						var handle = file.SafeMemoryMappedFileHandle.DangerousGetHandle();
 
-					openFiles.Add(handle, file);
+						openFiles.Add(handle, file);
 
-					return handle;
-				}
-				catch (Exception ex)
-				{
-					host.Logger.Log(ex);
+						return handle;
+					}
+					catch (Exception ex)
+					{
+						host.Logger.Log(ex);
+					}
 				}
 			}
 
@@ -209,7 +213,13 @@ namespace LoadBinaryPlugin
 				{
 					currentFile = ofd.FileName;
 
-					callbackProcess(currentFile.GetHashCode(), currentFile);
+					var data = new EnumerateProcessData
+					{
+						Id = (IntPtr)currentFile.GetHashCode(),
+						Path = currentFile
+					};
+
+					callbackProcess(ref data);
 				}
 			}
 		}
