@@ -192,7 +192,7 @@ namespace LoadBinaryPlugin
 
 		/// <summary>Opens a file browser dialog and reports the selected file.</summary>
 		/// <param name="callbackProcess">The callback which gets called for the selected file.</param>
-		public void EnumerateProcesses(Action<Tuple<IntPtr, string>> callbackProcess)
+		public void EnumerateProcesses(EnumerateProcessCallback callbackProcess)
 		{
 			if (callbackProcess == null)
 			{
@@ -207,7 +207,13 @@ namespace LoadBinaryPlugin
 				{
 					currentFile = ofd.FileName;
 
-					callbackProcess(Tuple.Create((IntPtr)currentFile.GetHashCode(), currentFile));
+					var data = new EnumerateProcessData
+					{
+						Id = (IntPtr)currentFile.GetHashCode(),
+						Path = currentFile
+					};
+
+					callbackProcess(ref data);
 				}
 			}
 		}
@@ -216,7 +222,7 @@ namespace LoadBinaryPlugin
 		/// <param name="process">The process.</param>
 		/// <param name="callbackSection">The callback which gets called for every section.</param>
 		/// <param name="callbackModule">The callback which gets called for every module.</param>
-		public void EnumerateRemoteSectionsAndModules(IntPtr process, Action<Section> callbackSection, Action<Module> callbackModule)
+		public void EnumerateRemoteSectionsAndModules(IntPtr process, EnumerateRemoteSectionCallback callbackSection, EnumerateRemoteModuleCallback callbackModule)
 		{
 			// Not supported.
 		}
