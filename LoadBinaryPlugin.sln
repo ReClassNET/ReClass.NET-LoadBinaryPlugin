@@ -1,11 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.27004.2002
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoadBinaryPlugin", "LoadBinaryPlugin.csproj", "{CA79BA0B-0D80-476A-B793-FC7EF7DCEAD8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReClass.NET", "..\ReClass.NET\ReClass.NET.csproj", "{BFB8917D-E9B4-463F-A6E8-612C35728C78}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReClass.NET", "..\ReClass.NET\ReClass.NET\ReClass.NET.csproj", "{BFB8917D-E9B4-463F-A6E8-612C35728C78}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -34,5 +34,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C9677E15-D4EA-4082-B65D-27B208118986}
 	EndGlobalSection
 EndGlobal

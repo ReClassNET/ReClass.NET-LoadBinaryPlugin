@@ -6,14 +6,13 @@ using System.IO.MemoryMappedFiles;
 using System.Windows.Forms;
 using ReClassNET.Core;
 using ReClassNET.Debugger;
-using ReClassNET.Memory;
 using ReClassNET.Plugins;
 
 namespace LoadBinaryPlugin
 {
 	public class LoadBinaryPluginExt : Plugin, ICoreProcessFunctions
 	{
-		private object sync = new object();
+		private readonly object sync = new object();
 
 		private IPluginHost host;
 
@@ -26,15 +25,7 @@ namespace LoadBinaryPlugin
 		public override bool Initialize(IPluginHost host)
 		{
 			Contract.Requires(host != null);
-
-			//System.Diagnostics.Debugger.Launch();
-
-			if (host == null)
-			{
-				throw new ArgumentNullException(nameof(host));
-			}
-
-			this.host = host;
+			this.host = host ?? throw new ArgumentNullException(nameof(host));
 
 			host.Process.CoreFunctions.RegisterFunctions("Load Binary", this);
 
@@ -59,8 +50,7 @@ namespace LoadBinaryPlugin
 		/// <returns>The file or null if the identifier doesn't exist.</returns>
 		private MemoryMappedFile GetMappedFileById(IntPtr id)
 		{
-			MemoryMappedFile file;
-			openFiles.TryGetValue(id, out file);
+			openFiles.TryGetValue(id, out var file);
 			return file;
 		}
 
@@ -71,8 +61,7 @@ namespace LoadBinaryPlugin
 		{
 			Contract.Requires(ex != null);
 
-			MemoryMappedFile file;
-			if (openFiles.TryGetValue(id, out file))
+			if (openFiles.TryGetValue(id, out var file))
 			{
 				file.Dispose();
 			}
@@ -94,7 +83,7 @@ namespace LoadBinaryPlugin
 		}
 
 		/// <summary>Opens the file.</summary>
-		/// <param name="pid">The file id.</param>
+		/// <param name="id">The file id.</param>
 		/// <param name="desiredAccess">The desired access. (ignored)</param>
 		/// <returns>A plugin internal handle to the file.</returns>
 		public IntPtr OpenRemoteProcess(IntPtr id, ProcessAccess desiredAccess)
@@ -129,8 +118,7 @@ namespace LoadBinaryPlugin
 		{
 			lock (sync)
 			{
-				MemoryMappedFile file;
-				if (openFiles.TryGetValue(process, out file))
+				if (openFiles.TryGetValue(process, out var file))
 				{
 					openFiles.Remove(process);
 
