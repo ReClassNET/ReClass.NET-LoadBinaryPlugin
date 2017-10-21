@@ -84,6 +84,7 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <None Include="README.md" />
     <None Include="Resources\icon.png" />
   </ItemGroup>
   <ItemGroup>
