@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Drawing;
+using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Windows.Forms;
 using ReClassNET.Core;
 using ReClassNET.Debugger;
+using ReClassNET.Memory;
 using ReClassNET.Plugins;
 
 namespace LoadBinaryPlugin
@@ -18,7 +20,7 @@ namespace LoadBinaryPlugin
 
 		private string currentFile;
 
-		private Dictionary<IntPtr, MemoryMappedFile> openFiles;
+		private Dictionary<IntPtr, MemoryMappedFileInfo> openFiles;
 
 		public override Image Icon => Properties.Resources.icon;
 
@@ -29,7 +31,7 @@ namespace LoadBinaryPlugin
 
 			host.Process.CoreFunctions.RegisterFunctions("Load Binary", this);
 
-			openFiles = new Dictionary<IntPtr, MemoryMappedFile>();
+			openFiles = new Dictionary<IntPtr, MemoryMappedFileInfo>();
 
 			return true;
 		}
@@ -38,17 +40,17 @@ namespace LoadBinaryPlugin
 		{
 			foreach (var kv in openFiles)
 			{
-				kv.Value.Dispose();
+				kv.Value.File.Dispose();
 			}
 			openFiles.Clear();
 
 			host = null;
 		}
 
-		/// <summary>Gets a <see cref="MemoryMappedFile"/> by its plugin internal identifier.</summary>
+		/// <summary>Gets a <see cref="MemoryMappedFileInfo"/> by its plugin internal identifier.</summary>
 		/// <param name="id">The identifier.</param>
 		/// <returns>The file or null if the identifier doesn't exist.</returns>
-		private MemoryMappedFile GetMappedFileById(IntPtr id)
+		private MemoryMappedFileInfo GetMappedFileById(IntPtr id)
 		{
 			openFiles.TryGetValue(id, out var file);
 			return file;
@@ -61,9 +63,9 @@ namespace LoadBinaryPlugin
 		{
 			Contract.Requires(ex != null);
 
-			if (openFiles.TryGetValue(id, out var file))
+			if (openFiles.TryGetValue(id, out var info))
 			{
-				file.Dispose();
+				info.File.Dispose();
 			}
 
 			openFiles.Remove(id);
@@ -94,11 +96,18 @@ namespace LoadBinaryPlugin
 				{
 					try
 					{
-						var file = MemoryMappedFile.CreateFromFile(currentFile);
+						var mappedFile = MemoryMappedFile.CreateFromFile(currentFile);
 
-						var handle = file.SafeMemoryMappedFileHandle.DangerousGetHandle();
+						var handle = mappedFile.SafeMemoryMappedFileHandle.DangerousGetHandle();
 
-						openFiles.Add(handle, file);
+						openFiles.Add(
+							handle,
+							new MemoryMappedFileInfo(
+								currentFile,
+								(int)new FileInfo(currentFile).Length,
+								mappedFile
+							)
+						);
 
 						return handle;
 					}
@@ -118,11 +127,11 @@ namespace LoadBinaryPlugin
 		{
 			lock (sync)
 			{
-				if (openFiles.TryGetValue(process, out var file))
+				if (openFiles.TryGetValue(process, out var info))
 				{
 					openFiles.Remove(process);
 
-					file.Dispose();
+					info.File.Dispose();
 				}
 			}
 		}
@@ -138,12 +147,12 @@ namespace LoadBinaryPlugin
 		{
 			lock (sync)
 			{
-				var file = GetMappedFileById(process);
-				if (file != null)
+				var info = GetMappedFileById(process);
+				if (info != null)
 				{
 					try
 					{
-						using (var stream = file.CreateViewStream(address.ToInt64(), size))
+						using (var stream = info.File.CreateViewStream(address.ToInt64(), size))
 						{
 							stream.Read(buffer, 0, size);
 
@@ -198,6 +207,7 @@ namespace LoadBinaryPlugin
 					var data = new EnumerateProcessData
 					{
 						Id = (IntPtr)currentFile.GetHashCode(),
+						Name = Path.GetFileName(currentFile),
 						Path = currentFile
 					};
 
@@ -206,13 +216,38 @@ namespace LoadBinaryPlugin
 			}
 		}
 
-		/// <summary>Not supported.</summary>
+		/// <summary>Reports a single module and section for the loaded file.</summary>
 		/// <param name="process">The process.</param>
 		/// <param name="callbackSection">The callback which gets called for every section.</param>
 		/// <param name="callbackModule">The callback which gets called for every module.</param>
 		public void EnumerateRemoteSectionsAndModules(IntPtr process, EnumerateRemoteSectionCallback callbackSection, EnumerateRemoteModuleCallback callbackModule)
 		{
-			// Not supported.
+			lock (sync)
+			{
+				var info = GetMappedFileById(process);
+				if (info != null)
+				{
+					var module = new EnumerateRemoteModuleData
+					{
+						BaseAddress = IntPtr.Zero,
+						Path = info.Path,
+						Size = (IntPtr)info.Size
+					};
+					callbackModule(ref module);
+
+					var section = new EnumerateRemoteSectionData
+					{
+						BaseAddress = IntPtr.Zero,
+						Size = (IntPtr)info.Size,
+						Type = SectionType.Image,
+						Category = SectionCategory.Unknown,
+						ModulePath = info.Path,
+						Name = string.Empty,
+						Protection = SectionProtection.Read
+					};
+					callbackSection(ref section);
+				}
+			}
 		}
 
 		public void ControlRemoteProcess(IntPtr process, ControlRemoteProcessAction action)
