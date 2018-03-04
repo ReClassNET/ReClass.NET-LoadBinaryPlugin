@@ -27,6 +27,7 @@ namespace LoadBinaryPlugin
 		public override bool Initialize(IPluginHost host)
 		{
 			Contract.Requires(host != null);
+
 			this.host = host ?? throw new ArgumentNullException(nameof(host));
 
 			host.Process.CoreFunctions.RegisterFunctions("Load Binary", this);
