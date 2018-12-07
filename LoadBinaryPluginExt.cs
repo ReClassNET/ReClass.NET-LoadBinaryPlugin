@@ -148,6 +148,10 @@ namespace LoadBinaryPlugin
 		{
 			lock (sync)
 			{
+				if (address.ToInt64() < 0)
+				{
+					return false;
+				}
 				var info = GetMappedFileById(process);
 				if (info != null)
 				{
