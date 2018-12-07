@@ -164,12 +164,6 @@ namespace LoadBinaryPlugin
 						{
 							addressInt64 &= 0xFFFF_FFFF;
 						}
-						using (var stream = info.File.CreateViewStream(addressInt64, size))
-						{
-							stream.Read(buffer, 0, size);
-
-							return true;
-						}
 						using (var stream = info.File.CreateViewStream(address.ToInt64(), size))
 						{
 							stream.Read(buffer, 0, size);
