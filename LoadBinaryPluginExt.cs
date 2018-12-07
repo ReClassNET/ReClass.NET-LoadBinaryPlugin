@@ -99,7 +99,7 @@ namespace LoadBinaryPlugin
 					{
 						var mappedFile = MemoryMappedFile.CreateFromFile(currentFile);
 
-						var handle = mappedFile.SafeMemoryMappedFileHandle.DangerousGetHandle();
+						var handle = (IntPtr)mappedFile.SafeMemoryMappedFileHandle.GetHashCode();
 
 						openFiles.Add(
 							handle,
