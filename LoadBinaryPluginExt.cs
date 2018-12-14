@@ -7,6 +7,7 @@ using System.IO.MemoryMappedFiles;
 using System.Windows.Forms;
 using ReClassNET.Core;
 using ReClassNET.Debugger;
+using ReClassNET.Extensions;
 using ReClassNET.Memory;
 using ReClassNET.Plugins;
 
@@ -153,18 +154,7 @@ namespace LoadBinaryPlugin
 				{
 					try
 					{
-						/*
-						 * This ensures that addresses larger than 0x7FFF_FFFF are not negative after calling
-						 * ToInt64 by removing low side from long address from IntPtr (which seems to be casted
-						 * from int to long non-bitwise). Same problem applies to addresses that are larger than
-						 * 0x7FFF_FFFF_FFFF_FFFF, however CreateViewStream only accepts long parameter.
-						 */
-						long addressInt64 = address.ToInt64();
-						if (addressInt64 < 0)
-						{
-							addressInt64 &= 0xFFFF_FFFF;
-						}
-						using (var stream = info.File.CreateViewStream(addressInt64, size))
+						using (var stream = info.File.CreateViewStream(address.ToInt64Bits(), size))
 						{
 							stream.Read(buffer, 0, size);
 
